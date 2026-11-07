@@ -31,7 +31,7 @@ Gator is a command-line RSS feed aggregator written in Go. It stores users, feed
 1. Clone the repository and enter the project directory:
 
    ```sh
-   git clone https://github.com/mik242/gator.git
+   git clone https://github.com/242terk242/gator.git
    cd gator
    ```
 
@@ -69,7 +69,7 @@ Gator is a command-line RSS feed aggregator written in Go. It stores users, feed
 5. Install the CLI:
 
    ```sh
-   go install github.com/mik242/gator@latest
+   go install github.com/242terk242/gator@latest
    ```
 
    This installs the `gator` executable into Go's binary directory (usually `$(go env GOPATH)/bin`). Make sure that directory is on your `PATH`. This command is available once the repository is published and accessible at that module path. To build from a local checkout instead, run `go build -o gator .` and invoke it as `./gator`.

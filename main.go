@@ -13,9 +13,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/242terk242/gator/internal/config"
+	"github.com/242terk242/gator/internal/database"
 	_ "github.com/lib/pq"
-	"github.com/mik242/gator/internal/config"
-	"github.com/mik242/gator/internal/database"
 )
 
 type state struct {
@@ -364,22 +364,49 @@ func scrapeFeeds(state *state) error {
 	}
 
 	for _, item := range feed.Channel.Item {
-		saveParams := database.CreatePostParams{
-			ID:        uuid.New(),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-			FeedID:    nextFeed.ID,
-			Title:     item.Title,
-			URL:       item.Link,
-			Content:   item.Description,
+		publishedAt, err := parsePublishedAt(item.PubDate)
+		if err != nil {
+			return fmt.Errorf("invalid publication date for post %q: %w", item.Title, err)
 		}
-		_, err := state.db.CreatePost(context.Background(), saveParams)
+		now := time.Now()
+		saveParams := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   now,
+			UpdatedAt:   now,
+			FeedID:      nextFeed.ID,
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: item.Description != ""},
+			PublishedAt: publishedAt,
+		}
+		_, err = state.db.CreatePost(context.Background(), saveParams)
 		if err != nil {
 			return fmt.Errorf("failed to save post: %w", err)
 		}
 		fmt.Printf("Saved Post Title: %s\n", item.Title)
 	}
 	return nil
+}
+
+func parsePublishedAt(value string) (time.Time, error) {
+	if value == "" {
+		return time.Now(), nil
+	}
+
+	layouts := []string{
+		time.RFC1123Z,
+		time.RFC1123,
+		time.RFC822Z,
+		time.RFC822,
+		time.RFC3339,
+	}
+	for _, layout := range layouts {
+		publishedAt, err := time.Parse(layout, value)
+		if err == nil {
+			return publishedAt, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported RSS date %q", value)
 }
 
 func handlerBrowse(state *state, cmd command) error {
@@ -390,7 +417,7 @@ func handlerBrowse(state *state, cmd command) error {
 
 	for _, post := range posts {
 		fmt.Printf("Post Title: %s\n", post.Title)
-		fmt.Printf("Post URL: %s\n", post.URL)
+		fmt.Printf("Post URL: %s\n", post.Url)
 		fmt.Printf("Post Content: %s\n", post.Content)
 		fmt.Printf("Post Feed Name: %s\n", post.FeedName)
 	}

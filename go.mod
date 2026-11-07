@@ -1,4 +1,4 @@
-module github.com/mik242/gator
+module github.com/242terk242/gator
 
 go 1.26.0
 
