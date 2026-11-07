@@ -1,0 +1,1 @@
+INSERT INTO feeds (last_fetched_at, updated_at) VALUES (NULL, NOW());
